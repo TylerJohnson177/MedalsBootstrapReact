@@ -71,12 +71,13 @@ class App extends Component {
   handleClose = () => this.setState({ show:false });
   handleCloseToast = () => this.setState({showToast:false});
   handleShow = () => {
-    this.state.newCountryName = "";
+    //this.state.newCountryName = "";
+    this.setState({newCountryName:""})
     this.setState({ show:true });
   }
   handleShowToast = () => this.setState({showToast:true})
   keyPress = (e) => {
-    (e.keyCode ? e.keyCode : e.which) == '13' && this.handleAdd();
+    (e.keyCode ? e.keyCode : e.which) === '13' && this.handleAdd();
   }
   render() { 
     return (
