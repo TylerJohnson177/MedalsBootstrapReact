@@ -2,6 +2,7 @@
 // Author:      Jeff Grissom
 // Version:     4.xx
 import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import Container from 'react-bootstrap/Container';
 import Navbar from 'react-bootstrap/Navbar';
 import Badge from 'react-bootstrap/Badge';
@@ -22,22 +23,34 @@ const App = () => {
   const [showForm, setShowForm] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [newCountryName, setNewCountryName] = useState("");
+  const apiEndPoint = "https://medals-api-6.azurewebsites.net/api/country";
   
   //const handleChange = (e) => this.setState({ [e.target.name]: e.target.value});
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (newCountryName.length > 0) {
-      const id = countries.length === 0 ? 1 : Math.max(...countries.map(country => country.id)) + 1;
-      const mutableCountries = countries.concat({ id: id, name: newCountryName, gold: 0, silver: 0, bronze: 0 });
-      setCountries(mutableCountries);
+      const {data: post} = await axios.post(apiEndPoint, {name: newCountryName, bronze: 0, silver: 0, gold: 0});
+      setCountries(countries.concat(post));
     }
     else{
       handleShowToast();
     }
     handleClose();
   }
-  const handleDelete = (countryId) => {
-    const mutableCountries = countries.filter(c => c.id !== countryId);
-    setCountries(mutableCountries);
+  const handleDelete = async (countryId) => {
+    const originalCountries = countries;
+    setCountries(countries.filter(c => c.id !== countryId));
+    try{
+      await axios.delete(`${apiEndPoint}/${countryId}`);
+    }
+    catch(e){
+      if(e.response && e.response.status === 404){
+        console.log("Country already deleted");
+      }
+      else{
+        alert("Error when deleting country");
+        setCountries(originalCountries);
+      }
+    }
   }
   const handleIncrement = (countryId, medalName) => {
     const idx = countries.findIndex(c => c.id === countryId);
@@ -62,6 +75,7 @@ const App = () => {
   const handleShow = () => {
     setNewCountryName("");
     setShowForm(true);
+    console.log(countries);
   }
   const handleShowToast = () => setShowToast(true);
   const keyPress = (e) => {
@@ -69,18 +83,17 @@ const App = () => {
   }
 
   useEffect(() => {
-    let mutableCountries = [
-      { id: 1, name: 'United States', gold: 2, silver: 2, bronze: 3 },
-      { id: 2, name: 'China', gold: 3, silver: 1, bronze: 0 },
-      { id: 3, name: 'Germany', gold: 0, silver: 2, bronze: 2 },
-    ];
+    async function fetchData(){
+      const {data: fetchedCountries} = await axios.get(apiEndPoint);
+      setCountries(fetchedCountries);
+    }
     let mutableMedals = [
       { id: 1, name: 'gold' },
       { id: 2, name: 'silver' },
       { id: 3, name: 'bronze' },
     ];
-    setCountries(mutableCountries);
     setMedals(mutableMedals);
+    fetchData();
   }, []);
     return (
       <React.Fragment>
